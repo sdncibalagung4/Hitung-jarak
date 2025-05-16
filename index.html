@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hitung Jarak ke Sekolah</title>
+</head>
+<body>
+  <h1>Hitung Jarak dari Rumah ke Sekolah di Bogor</h1>
+  <form id="form">
+    <label>Latitude Rumah: <input type="number" step="any" id="lat" required></label><br>
+    <label>Longitude Rumah: <input type="number" step="any" id="lng" required></label><br>
+    <button type="submit">Hitung Jarak</button>
+  </form>
+
+  <h2>Hasil Perhitungan:</h2>
+  <ol id="results"></ol>
+
+  <script>
+    const schools = [
+      { name: "SMP NEGERI 7 BOGOR", lat: -6.599515, lng: 106.790879 },
+      { name: "SMP NEGERI 1 BOGOR", lat: -6.597439, lng: 106.793555 },
+      { name: "SMP NEGERI 9 BOGOR", lat: -6.616003, lng: 106.800323 },
+      { name: "SMP NEGERI 4 BOGOR", lat: -6.591695, lng: 106.788886 },
+      { name: "SMP NEGERI 2 BOGOR", lat: -6.592719, lng: 106.793715 },
+      { name: "SMP NEGERI 5 BOGOR", lat: -6.569106, lng: 106.800309 },
+      { name: "SMP NEGERI 6 BOGOR", lat: -6.578241, lng: 106.771985 },
+      { name: "SMP NEGERI 8 BOGOR", lat: -6.569481, lng: 106.806490 },
+      { name: "SMP NEGERI 10 BOGOR", lat: -6.629828, lng: 106.812125 },
+      { name: "SMP NEGERI 11 BOGOR", lat: -6.588692, lng: 106.799297 },
+      { name: "SMP NEGERI 12 BOGOR", lat: -6.570956, lng: 106.798423 },
+      { name: "SMP NEGERI 3 BOGOR", lat: -6.597154, lng: 106.807362 },
+      { name: "SMP NEGERI 13 BOGOR", lat: -6.632930, lng: 106.802629 },
+      { name: "SMP NEGERI 14 BOGOR", lat: -6.555236, lng: 106.747264 },
+      { name: "SMP NEGERI 15 BOGOR", lat: -6.546804, lng: 106.822505 },
+      { name: "SMP NEGERI 16 BOGOR", lat: -6.533017, lng: 106.773133 },
+      { name: "SMP NEGERI 17 BOGOR", lat: -6.673343, lng: 106.840841 },
+      { name: "SMP NEGERI 18 KOTA BOGOR", lat: -6.611972, lng: 106.825837 },
+      { name: "SMP NEGERI 19 BOGOR", lat: -6.546871, lng: 106.809847 },
+      { name: "SMP NEGERI 20 BOGOR", lat: -6.584004, lng: 106.799984 }
+    ];
+
+    // Fungsi untuk menghitung jarak Haversine
+    function haversine(lat1, lon1, lat2, lon2) {
+      const R = 6371000; // Radius bumi dalam meter
+      const toRad = deg => deg * Math.PI / 180;
+
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a = Math.sin(dLat / 2) ** 2 +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                Math.sin(dLon / 2) ** 2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    document.getElementById('form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const lat = parseFloat(document.getElementById('lat').value);
+      const lng = parseFloat(document.getElementById('lng').value);
+
+      const distances = schools.map(school => {
+        const distance = haversine(lat, lng, school.lat, school.lng);
+        return { ...school, distance: Math.round(distance) };
+      });
+
+      distances.sort((a, b) => a.distance - b.distance);
+
+      const resultList = document.getElementById('results');
+      resultList.innerHTML = '';
+      distances.forEach((school, index) => {
+        const li = document.createElement('li');
+        li.textContent = `${school.name}: ${school.distance} meter`;
+        resultList.appendChild(li);
+      });
+    });
+  </script>
+</body>
+</html>
