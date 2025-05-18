@@ -2,27 +2,51 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hitung Jarak ke Sekolah</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    #map { height: 500px; margin-top: 20px; }
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    #print-button { margin-top: 10px; }
+
+    /* Cetak hanya bagian hasil */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #print-section, #print-section * {
+        visibility: visible;
+      }
+      #print-section {
+        position: absolute;
+        left: 0;
+        top: 0;
+      }
+    }
+  </style>
 </head>
 <body>
-  <h1>Hitung Jarak dari Rumah ke Sekolah di Bogor</h1>
-  <form id="form">
-    <label>Latitude Rumah: <input type="number" step="any" id="lat" required></label><br>
-    <label>Longitude Rumah: <input type="number" step="any" id="lng" required></label><br>
-    <button type="submit">Hitung Jarak</button>
-  </form>
+  <h2>Hitung Jarak dari Rumah ke Sekolah di Bogor</h2>
+  <label>Latitude Rumah: <input id="lat" type="number" step="any"></label><br>
+  <label>Longitude Rumah: <input id="lng" type="number" step="any"></label><br>
+  <button onclick="hitungJarak()">Hitung</button>
+  <button id="print-button" onclick="printHasil()">Cetak Hasil</button>
 
-  <h2>Hasil Perhitungan:</h2>
-  <ol id="results"></ol>
+  <div id="print-section">
+    <ul id="results"></ul>
+  </div>
 
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
     const schools = [
-      { name: "SMP NEGERI 7 BOGOR", lat: -6.599515, lng: 106.790879 },
+      { name: "SMP NEGERI 7 BOGOR", lat: -6.599682, lng: 106.791047 },
       { name: "SMP NEGERI 1 BOGOR", lat: -6.597439, lng: 106.793555 },
-      { name: "SMP NEGERI 9 BOGOR", lat: -6.616003, lng: 106.800323 },
+      { name: "SMP NEGERI 9 BOGOR", lat: -6.615672, lng: 106.800342 },
       { name: "SMP NEGERI 4 BOGOR", lat: -6.591695, lng: 106.788886 },
-      { name: "SMP NEGERI 2 BOGOR", lat: -6.592719, lng: 106.793715 },
+      { name: "SMP NEGERI 2 BOGOR", lat: -6.592563, lng: 106.793387 },
       { name: "SMP NEGERI 5 BOGOR", lat: -6.569106, lng: 106.800309 },
       { name: "SMP NEGERI 6 BOGOR", lat: -6.578241, lng: 106.771985 },
       { name: "SMP NEGERI 8 BOGOR", lat: -6.569481, lng: 106.806490 },
@@ -32,48 +56,68 @@
       { name: "SMP NEGERI 3 BOGOR", lat: -6.597154, lng: 106.807362 },
       { name: "SMP NEGERI 13 BOGOR", lat: -6.632930, lng: 106.802629 },
       { name: "SMP NEGERI 14 BOGOR", lat: -6.555236, lng: 106.747264 },
-      { name: "SMP NEGERI 15 BOGOR", lat: -6.546804, lng: 106.822505 },
+      { name: "SMP NEGERI 15 BOGOR", lat: -6.546893, lng: 106.822452 },
       { name: "SMP NEGERI 16 BOGOR", lat: -6.533017, lng: 106.773133 },
       { name: "SMP NEGERI 17 BOGOR", lat: -6.673343, lng: 106.840841 },
       { name: "SMP NEGERI 18 KOTA BOGOR", lat: -6.611972, lng: 106.825837 },
       { name: "SMP NEGERI 19 BOGOR", lat: -6.546871, lng: 106.809847 },
-      { name: "SMP NEGERI 20 BOGOR", lat: -6.584004, lng: 106.799984 }
+      { name: "SMP NEGERI 20 BOGOR", lat: -6.583606, lng: 106.799951 },
+      { name: "SMP NEGERI 21 BOGOR", lat: -6.518299, lng: 106.788795 }
     ];
 
-    // Fungsi untuk menghitung jarak Haversine
     function haversine(lat1, lon1, lat2, lon2) {
       const R = 6371000; // Radius bumi dalam meter
-      const toRad = deg => deg * Math.PI / 180;
-
+      const toRad = angle => angle * Math.PI / 180;
       const dLat = toRad(lat2 - lat1);
       const dLon = toRad(lon2 - lon1);
-      const a = Math.sin(dLat / 2) ** 2 +
+      const a = Math.sin(dLat/2)**2 +
                 Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-                Math.sin(dLon / 2) ** 2;
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;
+                Math.sin(dLon/2)**2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
-    document.getElementById('form').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const lat = parseFloat(document.getElementById('lat').value);
-      const lng = parseFloat(document.getElementById('lng').value);
+    let map;
 
-      const distances = schools.map(school => {
-        const distance = haversine(lat, lng, school.lat, school.lng);
-        return { ...school, distance: Math.round(distance) };
+    function hitungJarak() {
+      const lat = parseFloat(document.getElementById("lat").value);
+      const lng = parseFloat(document.getElementById("lng").value);
+      if (!lat || !lng) return alert("Masukkan koordinat rumah dengan benar.");
+
+      const results = schools.map(s => {
+        const distance = haversine(lat, lng, s.lat, s.lng);
+        return { ...s, distance: Math.round(distance) };
+      }).sort((a, b) => a.distance - b.distance);
+
+      const list = document.getElementById("results");
+      list.innerHTML = "";
+      results.forEach((s, i) => {
+        const li = document.createElement("li");
+        li.textContent = `${i + 1}. ${s.name} - ${s.distance} meter`;
+        list.appendChild(li);
       });
 
-      distances.sort((a, b) => a.distance - b.distance);
+      if (!map) {
+        map = L.map('map').setView([lat, lng], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
+      } else {
+        map.setView([lat, lng], 13);
+        map.eachLayer((layer) => {
+          if (layer instanceof L.Marker) map.removeLayer(layer);
+        });
+      }
 
-      const resultList = document.getElementById('results');
-      resultList.innerHTML = '';
-      distances.forEach((school, index) => {
-        const li = document.createElement('li');
-        li.textContent = `${school.name}: ${school.distance} meter`;
-        resultList.appendChild(li);
+      L.marker([lat, lng]).addTo(map).bindPopup("Rumah Anda").openPopup();
+
+      results.forEach((s) => {
+        L.marker([s.lat, s.lng]).addTo(map).bindPopup(`${s.name}<br>Jarak: ${s.distance} meter`);
       });
-    });
+    }
+
+    function printHasil() {
+      window.print();
+    }
   </script>
 </body>
 </html>
