@@ -5,7 +5,7 @@
   <meta charset="utf-8" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
-    #map { height: 500px; }
+    #map { height: 500px; display: none; }
     body { font-family: sans-serif; padding: 1em; }
   </style>
 </head>
@@ -40,11 +40,13 @@ const sekolah = [
   { nama: "SMP NEGERI 15 BOGOR", lat: -6.546893, lng: 106.822452 },
   { nama: "SMP NEGERI 16 BOGOR", lat: -6.533017, lng: 106.773133 },
   { nama: "SMP NEGERI 17 BOGOR", lat: -6.673343, lng: 106.840841 },
-  { nama: "SMP NEGERI 18 BOGOR", lat: -6.611972, lng: 106.825837 },
+  { nama: "SMP NEGERI 18 KOTA BOGOR", lat: -6.611972, lng: 106.825837 },
   { nama: "SMP NEGERI 19 BOGOR", lat: -6.546871, lng: 106.809847 },
   { nama: "SMP NEGERI 20 BOGOR", lat: -6.583606, lng: 106.799951 },
   { nama: "SMP NEGERI 21 BOGOR", lat: -6.518299, lng: 106.788795 }
 ];
+
+let map;
 
 function haversine(lat1, lon1, lat2, lon2) {
   const R = 6371000;
@@ -71,12 +73,13 @@ function hitungJarak() {
   html += "</ol>";
   document.getElementById("hasil").innerHTML = html;
 
+  document.getElementById("map").style.display = "block";
   tampilkanPeta(latRumah, lngRumah, hasil);
 }
 
 function tampilkanPeta(latRumah, lngRumah, daftar) {
-  if (window.map) map.remove();
-  window.map = L.map('map').setView([latRumah, lngRumah], 13);
+  if (map) map.remove();
+  map = L.map('map').setView([latRumah, lngRumah], 13);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
   L.marker([latRumah, lngRumah]).addTo(map).bindPopup("Rumah Anda").openPopup();
