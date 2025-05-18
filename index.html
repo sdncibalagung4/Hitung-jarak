@@ -5,8 +5,14 @@
   <meta charset="utf-8" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
-    #map { height: 500px; display: none; }
-    body { font-family: sans-serif; padding: 1em; }
+    #map { height: 500px; display: none; margin-top: 1em; }
+    #map-print { display: none; page-break-before: always; margin-top: 2em; text-align: center; }
+    #map-print img { max-width: 100%; border: 1px solid #ccc; }
+
+    @media print {
+      #map { display: none !important; }
+      #map-print { display: block; }
+    }
   </style>
 </head>
 <body>
@@ -21,8 +27,13 @@
 
 <div id="hasil"></div>
 <div id="map"></div>
+<div id="map-print">
+  <h3>Peta Lokasi Sekolah</h3>
+  <img id="mapImage" src="" alt="Gambar Peta" />
+</div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script>
 const sekolah = [
   { nama: "SMP NEGERI 7 BOGOR", lat: -6.599682, lng: 106.791047 },
@@ -82,12 +93,10 @@ function hitungJarak() {
 function tampilkanPeta(latRumah, lngRumah, daftar) {
   if (map) map.remove();
   map = L.map('map').setView([latRumah, lngRumah], 13);
-
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
   L.marker([latRumah, lngRumah]).addTo(map).bindPopup("Rumah Anda").openPopup();
 
   let bounds = [[latRumah, lngRumah]];
-
   daftar.forEach(s => {
     const marker = L.marker([s.lat, s.lng]).addTo(map);
     marker.bindPopup(`${s.nama}<br>${s.jarak} meter`);
@@ -98,7 +107,11 @@ function tampilkanPeta(latRumah, lngRumah, daftar) {
 }
 
 function cetak() {
-  window.print();
+  html2canvas(document.getElementById("map")).then(canvas => {
+    const dataURL = canvas.toDataURL();
+    document.getElementById("mapImage").src = dataURL;
+    window.print();
+  });
 }
 
 // Geolokasi otomatis
