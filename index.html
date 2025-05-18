@@ -86,8 +86,18 @@ const sekolah = [
 let map = L.map('map').setView([-6.6, 106.8], 12);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
+// Ikon merah untuk penanda rumah
+const rumahIcon = L.icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
 function haversine(lat1, lon1, lat2, lon2) {
-  const R = 6371000; // radius bumi dalam meter
+  const R = 6371000;
   const toRad = x => x * Math.PI / 180;
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
@@ -95,7 +105,7 @@ function haversine(lat1, lon1, lat2, lon2) {
             Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
             Math.sin(dLon/2)**2;
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return Math.round(R * c); // dalam meter
+  return Math.round(R * c);
 }
 
 function hitungJarak() {
@@ -112,8 +122,8 @@ function hitungJarak() {
   });
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-  // Marker rumah
-  L.marker([latRumah, lonRumah], { title: "Rumah" }).addTo(map)
+  // Tambahkan marker rumah (MERAH)
+  L.marker([latRumah, lonRumah], { icon: rumahIcon, title: "Rumah" }).addTo(map)
     .bindPopup("Rumah Anda").openPopup();
   map.setView([latRumah, lonRumah], 13);
 
@@ -123,7 +133,7 @@ function hitungJarak() {
     return { ...s, jarak };
   }).sort((a, b) => a.jarak - b.jarak);
 
-  // Tampilkan tabel
+  // Tampilkan hasil
   let tbody = document.querySelector("#hasil tbody");
   tbody.innerHTML = "";
   hasil.forEach((s, i) => {
@@ -132,15 +142,12 @@ function hitungJarak() {
     // Marker sekolah
     let marker = L.marker([s.lat, s.lon], { title: s.nama }).addTo(map);
     marker.bindPopup(`<b>${s.nama}</b><br>Jarak: ${s.jarak.toLocaleString()} meter`);
-    if (i === 0) marker.openPopup(); // sekolah terdekat
-
-    // Garis dari rumah ke sekolah
-    L.polyline([[latRumah, lonRumah], [s.lat, s.lon]], {
-      color: 'blue', weight: 1, opacity: 0.7
-    }).addTo(map);
-  });
+    if (i === 0)
+{
+L.polyline([[latRumah, lonRumah], [s.lat, s.lon]], { color: 'blue' }).addTo(map);
+}
+});
 }
 </script>
 
-</body>
-</html>
+</body> </html>
