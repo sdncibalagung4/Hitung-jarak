@@ -26,7 +26,7 @@
       margin-right: 10px;
     }
 
-    #btnCetak {
+    #btnCetak, #btnCetakPeta {
       display: none;
     }
 
@@ -40,6 +40,29 @@
       0%, 100% { opacity: 1; }
       50% { opacity: 0.4; }
     }
+
+    @media print {
+      body {
+        padding: 0;
+      }
+
+      #status,
+      #hasil,
+      #btnCetak,
+      #btnCetakPeta,
+      label,
+      input,
+      button:not(.print-only),
+      h2 {
+        display: none !important;
+      }
+
+      #map {
+        height: 800px !important;
+        display: block !important;
+        page-break-before: always;
+      }
+    }
   </style>
 </head>
 <body>
@@ -50,16 +73,15 @@
 <label>Latitude Rumah: <input type="number" id="lat" step="any" /></label><br>
 <label>Longitude Rumah: <input type="number" id="lng" step="any" /></label><br><br>
 <button onclick="hitungJarak()">Hitung Jarak</button>
-<button id="btnCetak" onclick="cetak()">Cetak Hasil</button>
+<button id="btnCetak" onclick="cetak()">Cetak Hasil Lengkap</button>
+<button id="btnCetakPeta" onclick="cetakPeta()">Cetak Peta Saja</button>
 
 <div id="hasil"></div>
 <div id="map"></div>
 
-<!-- Audio Notifikasi -->
 <audio id="notifikasi-audio" preload="auto">
   <source src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" type="audio/ogg">
   <source src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.mp3" type="audio/mpeg">
-  Browser tidak mendukung audio.
 </audio>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -89,6 +111,7 @@ const sekolah = [
 ];
 
 let map;
+let bounds = [];
 
 function haversine(lat1, lon1, lat2, lon2) {
   const R = 6371000;
@@ -121,6 +144,7 @@ function hitungJarak() {
   tampilkanPeta(latRumah, lngRumah, hasil);
 
   document.getElementById("btnCetak").style.display = "inline-block";
+  document.getElementById("btnCetakPeta").style.display = "inline-block";
 }
 
 function tampilkanPeta(latRumah, lngRumah, daftar) {
@@ -130,7 +154,7 @@ function tampilkanPeta(latRumah, lngRumah, daftar) {
 
   L.marker([latRumah, lngRumah]).addTo(map).bindPopup("Rumah Anda").openPopup();
 
-  let bounds = [[latRumah, lngRumah]];
+  bounds = [[latRumah, lngRumah]];
   daftar.forEach(s => {
     const marker = L.marker([s.lat, s.lng]).addTo(map);
     marker.bindPopup(`${s.nama}<br>${s.jarak} meter`);
@@ -142,6 +166,12 @@ function tampilkanPeta(latRumah, lngRumah, daftar) {
 
 function cetak() {
   window.print();
+}
+
+function cetakPeta() {
+  document.getElementById("hasil").style.display = "none";
+  window.print();
+  document.getElementById("hasil").style.display = "block";
 }
 
 window.onload = function() {
@@ -161,7 +191,6 @@ window.onload = function() {
       status.innerText = "Lokasi Anda terdeteksi. Klik 'Hitung Jarak' untuk melihat hasil.";
       status.classList.remove("loading");
 
-      // Mainkan suara notifikasi
       audio.play();
     }, () => {
       status.innerText = "Gagal mendeteksi lokasi. Silakan isi manual.";
